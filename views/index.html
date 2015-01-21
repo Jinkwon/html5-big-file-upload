@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resumable Upload</title>
+    <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.min.css"/>
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="span8">
+            <h1>Resumable Upload</h1>
+        </div>
+        <div class="span4">
+            <div id="message" class="alert alert-success">
+                <strong>All requirements met !</strong>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="span4">
+            <label for="file">
+                <input type="file" id="file" required="required"/>
+            </label>
+        </div>
+        <div class="span4">
+            <input type="submit" id="submit" class="btn btn-primary"/>
+        </div>
+    </div>
+    <p>
+
+    <div class="progress progress-striped active">
+        <div style="width: 0%;" class="bar">
+        </div>
+    </div>
+    </p>
+    <ul id="output">
+    </ul>
+</div>
+</body>
+<script>
+    (function () {
+        //"use strict";
+        var chunk = 272144
+                , file
+                , output = document.querySelector('#output')
+                , fileReader = new FileReader();
+
+        var fileChosen = function (evnt) {
+            file = evnt.target.files[0];
+        };
+
+        fileReader.onload = function (evnt) {
+            var formData = new FormData();
+            formData.append('name', file.name);
+            formData.append('data', evnt.target.result);
+            sendData(formData);
+        };
+
+        var startUpload = function () {
+            var formData = new FormData();
+            formData.append('name', file.name);
+            formData.append('size', file.size);
+            sendData(formData);
+        };
+
+        var sendChunk = function (offset) {
+            console.log('sending chunk ', offset);
+            var place = offset * chunk; //The Next Blocks Starting Position
+            var blob = new Blob([file], {"type": file.type});
+            var nFile = blob.slice(place, place + Math.min(chunk, (file.size - place)));
+            fileReader.readAsBinaryString(nFile);
+
+            progress(place / file.size);
+        };
+
+        var progress = function (p) {
+            var bar = document.querySelector('.bar');
+            bar.style.width = p * 100 + '%';
+            bar.innerText = p * 100 + '%';
+            if (p == 1) {
+                bar.parentElement.className = 'progress progress-success progress-striped active';
+                bar.innerText = 'Done !';
+            }
+        };
+
+        var sendData = function (formData) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+            xhr.onload = function (e) {
+                if (this.status == 200) {
+
+                    if (this.response.slice(0, 5) === 'chunk') {
+                        var part = parseInt(this.response.slice(5), 10);
+                        sendChunk(part);
+                    } else {
+                        console.log(this.response);
+                        progress(1);
+                    }
+
+                }
+            };
+
+            xhr.send(formData);
+        };
+
+        // var place = data.offset * chunk; //The Next Blocks Starting Position
+        // var blob = new Blob([file], {"type" : file.type});
+        // var nFile = blob.slice(place, place + Math.min(chunk, (file.size-place)));
+        // fileReader.readAsBinaryString(nFile);
+
+
+        if (window.File && window.FileReader) {
+            document.querySelector('#submit').addEventListener('click', startUpload);
+            document.querySelector('#file').addEventListener('change', fileChosen);
+        } else {
+            document.querySelector('#message').innerHTML = "Your Browser Doesn't Support The File API Please Update Your Browser";
+        }
+
+    }());
+</script>
+</html>
