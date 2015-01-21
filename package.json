@@ -13,7 +13,7 @@
   "keywords": [
     "html5-upload"
   ],
-  "author": "JinKwon Lee",
+  "author": "JinKwon Lee <master@bdyne.net>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Jinkwon/html5-big-file-upload/issues"
